@@ -1,5 +1,13 @@
 # Lexical Analyser code (C) generator
 
+## Recommendations
+- **MAKE THE AUTOMATON DESIGN AS A FIRST STEP!!!!**
+- Do not parse keywords as tokens, parse them as identifiers and then check if they are keywords.
+- Read todo comments in the generated code.
+- The generated code is not perfect, you may need to modify it to suit your needs.
+- The generated code is not optimized, you may need to optimize it.
+- The generated code is not tested, you may need to test it.
+
 ## Description
 This is a simple lexical analyser code generator. It generates a C code that reads a file and tokenizes it. The tokens
 are defined by a set of automaton rules. The rules are defined in a file with the following format (separated by newlines):
