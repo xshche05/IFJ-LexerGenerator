@@ -20,9 +20,7 @@ final_step = f"""
 #define add_token(token, lexeme) \\
     state = {start_state}; \\
     symbol_step_back(); \\
-    string_del_last(lexeme); \\
     token_append(token, lexeme); \\
-    string_clear(lexeme); \\
 """
 
 
@@ -104,7 +102,7 @@ def generate_token_enum():
 
 def generate_inner_switch_case(state):
     has_rule_flag = False
-    out = 12*" " + "switch (symbol) {\n"
+    out = 12*" " + "switch (symbol) {\n" + (16*" " + "string_clear(lexeme);\n" if state == start_state else "")
     for rule in transition_rules:
         # make case for each symbol
         if rule[0] == state:
@@ -160,13 +158,13 @@ def generate_outer_switch_case():
     out += "while (flag) {\n"
     out += 4*" " + "symbol = get_next_symbol();\n"
     out += 4*" " + "if (symbol == EOF) flag = 0;\n"
-    out += 4*" " + "string_concat(lexeme, symbol);\n"
     out += 4*" " + "switch (state) {\n"
     for state in sorted(states):
         out += 8*" " + "case " + state + ":\n"
         out += generate_inner_switch_case(state)
         out += 12*" " + "break;\n"
     out += 4*" " + "}\n"
+    out += 4 * " " + "string_concat(lexeme, symbol);\n"
     out += "}\n"
     out += "}\n"
     return out
