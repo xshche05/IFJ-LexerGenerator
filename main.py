@@ -299,6 +299,7 @@ def get_intervals(symbols):
         intervals.append((temp_interval[0], temp_interval[1]))
     else:
         intervals.append((prev_symbol, prev_symbol))
+    intervals.sort(key=lambda x: x[0]==x[1])
     out = []
     for interval in intervals:
         if interval[0] == interval[1]:
@@ -306,6 +307,21 @@ def get_intervals(symbols):
         else:
             out.append(f"{repr(interval[0])}-{repr(interval[1])}")
     return out
+
+def get_digraph():
+    out = "digraph fsm {\n"
+    out += "rankdir=LR;\n"
+    out += "node [shape = doublecircle, width=1, height=1];\n"
+    for state in final_states_token_map.keys():
+        out += f"{state};\n"
+    out += "node [shape = circle, width=1, height=1];\n"
+    for rule in transition_rules:
+        out += f"{rule[0]} -> {rule[2]} [label=\"{''.join(get_intervals(rule[1])).replace(chr(39), '')}\"];\n"
+    out += "}\n"
+    return out
+
+
+graph_flag = False
 
 
 def main():
@@ -316,6 +332,9 @@ def main():
     if not check_if_all_states_are_reachable():
         return
     if not check_if_rules_are_deterministic():
+        return
+    if graph_flag:
+        print(get_digraph())
         return
     print(includes)
     print(defines)
@@ -336,7 +355,11 @@ if __name__ == "__main__":
         else:
             input_file = args[0]
     else:
-        print("Usage: python main.py <input_file> > output.c")
-        sys.exit(1)
+        if len(args) == 2 and args[0] == "-g":
+            input_file = args[1]
+            graph_flag = True
+        else:
+            print("Usage: python main.py <input_file> > output.c")
+            sys.exit(1)
     main()
 
