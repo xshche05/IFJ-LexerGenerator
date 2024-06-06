@@ -14,13 +14,67 @@ whitespaces = set(" \t")  # whitespace symbols
 white_symbols = set(" \t\n\r")  # ALL whitesymbols (whitespace + newline)
 newline = set("\n\r")  # newline symbols
 
+keywords_map = {}
+
 start_state = "START"
 
-final_step = f"""
-#define add_token(token, lexeme) \\
-    state = {start_state}; \\
-    symbol_step_back(); \\
-    token_append(token, lexeme); \\
+id_token = "ID"
+
+max_token_lexeme_len = 256
+
+includes = r"""// TODO include necessary headers
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+"""
+
+defines = f"""// TODO define necessary constants and macros
+#define LEXICAL_ERR 99
+#define add_token(token, lexeme, c)     \\
+    state = {start_state};              \\
+    symbol_step_back(c);                \\
+    token_append(token, lexeme);        \\
+"""
+
+predef_funcs = r"""
+// TODO function to get next source code symbol
+char get_next_symbol() {
+    return getc(stdin);
+}
+
+// TODO function to "un get" last symbol
+void symbol_step_back(char c) {
+    ungetc(c, stdin);
+}
+
+token_t validate_id_keyword(char *lexeme);
+
+// TODO function to save parsed token, MAKE IDENTIFIER validation to get keywords tokens, add tokens to some kind of list, to get them from during syntax analysis
+void token_append(token_t token, char *lexeme) {
+    token_t v_token = token;
+""" + f"    if (v_token == {id_token}) " + "{" + r"""
+        v_token = validate_id_keyword(lexeme);
+    }
+    printf("%s : \"%s\"\n", map_array[v_token], lexeme);
+}
+
+// TODO function to concatenate char to string
+void string_concat(char *str, char c) {
+    int len = strlen(str);
+    str[len] = c;
+    str[len+1] = '\0';
+}
+
+// TODO function to clear string
+void string_clear(char *str) {
+    str[0] = '\0';
+}
+
+// TODO function to delete last char from string
+void string_del_last(char *str) {
+    int len = strlen(str);
+    str[len-1] = '\0';
+}
 """
 
 
@@ -64,7 +118,7 @@ def get_states(file_data):
                 # remove the curly braces
                 raw = raw[1:-1]
                 state = raw.split("=")[0].strip()
-                token = raw.split("=")[1].strip()[1:-1]
+                token = raw.split("=")[1].strip()
 
                 if not state.endswith("_F"):
                     raise Exception("Final state must end with _F")
@@ -73,36 +127,56 @@ def get_states(file_data):
 
                 if state not in final_states_token_map.keys():
                     final_states_token_map[state] = token
+            elif raw.startswith("?"):
+                # Keyword
+                # remove the question mark
+                raw = raw[1:]
+                keyword = raw.split("->")[0].strip()
+                token = raw.split("->")[1].strip()
+                keywords_map[keyword] = token
 
 
 def generate_state_enum():
     enum_str = "typedef enum {\n"
-    for state in sorted(states):
+    for state in states:
         enum_str += " "*4 + state + ",\n"
     enum_str = enum_str[:-2]
     enum_str += "\n} fsm_state_t;\n\n"
     return enum_str
 
 
+def generate_keyword_validation():
+    out = "token_t validate_id_keyword(char *lexeme) {\n"
+    for keyword in keywords_map.keys():
+        out += " "*4 + f"if (strcmp(lexeme, \"{keyword}\") == 0) return {keywords_map[keyword]};\n"
+    out += " "*4 + f"return {id_token};\n"
+    out += "}\n"
+    return out
+
+
 def generate_token_enum():
     enum_str = "typedef enum {\n"
-    for state in sorted(final_states_token_map.keys()):
+    map_str = "char *map_array[] = {\n"
+    for state in final_states_token_map.keys():
         enum_str += " "*4 + final_states_token_map[state] + ",\n"
+        map_str += f"\"{final_states_token_map[state]}\",\n"
+    for keyword in keywords_map.values():
+        if keyword not in final_states_token_map.values():
+            enum_str += " "*4 + keyword + ",\n"
+            map_str += f"\"{keyword}\",\n"
+        else:
+            raise Exception(f"Keyword token {keyword} is already defined as final state token!\n"
+                            "Please change the keyword token name or the final state name!")
     enum_str = enum_str[:-2]
     enum_str += "\n} token_t;\n\n"
-    enum_str += "char get_next_symbol(); // TODO function to get next source code symbol\n"
-    enum_str += "void symbol_step_back(); // TODO function to \"un get\" last symbol\n"
-    enum_str += ("void token_append(token_t token, char *lexeme); // TODO function to save parsed token, MAKE IDENTIFIER validation to get keywords tokens"
-                 ", add tokens to some kind of list, to get them from during syntax analysis\n")
-    enum_str += "void string_concat(char *str, char c); // TODO function to concatenate char to string\n"
-    enum_str += "void string_clear(char *str); // TODO function to clear string\n"
-    enum_str += "void string_del_last(char *str); // TODO function to delete last char from string\n"
-    return enum_str
+    map_str = map_str[:-2]
+    map_str += "\n};\n\n"
+    return enum_str + map_str
 
 
 def generate_inner_switch_case(state):
     has_rule_flag = False
-    out = 12*" " + "switch (symbol) {\n" + (16*" " + "string_clear(lexeme);\n" if state == start_state else "")
+    out = (12*" " + "string_clear(lexeme);\n" if state == start_state else "") + 12*" " + "switch (symbol) {\n"
     for rule in transition_rules:
         # make case for each symbol
         if rule[0] == state:
@@ -139,7 +213,7 @@ def generate_inner_switch_case(state):
         out = ""
         padding_offset = -8
     if state.endswith("_F"):
-        out += (20+padding_offset)*" " + f"add_token({final_states_token_map[state]}, lexeme);\n"
+        out += (20+padding_offset)*" " + f"add_token({final_states_token_map[state]}, lexeme, symbol);\n"
     else:
         out += (20+padding_offset)*" " + "exit(LEXICAL_ERR)" + ";\n"
 
@@ -153,7 +227,7 @@ def generate_outer_switch_case():
     out = "void lexical_analyzer() {\n"
     out += "fsm_state_t state = " + start_state + ";\n"
     out += "int flag = 1;\n"
-    out += "char *lexeme = malloc(256 * sizeof(char));\n"
+    out += f"char *lexeme = malloc({max_token_lexeme_len} * sizeof(char));\n"
     out += "char symbol;\n"
     out += "while (flag) {\n"
     out += 4*" " + "symbol = get_next_symbol();\n"
@@ -234,9 +308,6 @@ def get_intervals(symbols):
     return out
 
 
-#
-
-
 def main():
     with open(input_file, "r") as file:
         file_data = file.read()
@@ -246,11 +317,12 @@ def main():
         return
     if not check_if_rules_are_deterministic():
         return
-    print("#define LEXICAL_ERR 107 // TODO specify lexical error exit code\n\n")
-    print("#include <stdlib.h>\n#include <stdio.h>\n")
-    print(final_step)
+    print(includes)
+    print(defines)
     print(generate_state_enum())
     print(generate_token_enum())
+    print(predef_funcs)
+    print(generate_keyword_validation())
     print(generate_outer_switch_case())
 
 

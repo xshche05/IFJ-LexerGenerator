@@ -21,7 +21,7 @@ Where:
 
 As a starting state, use the state name `START`.
 
-Additionally, you have to define tokens names for FINAL states. The format is:
+As a second step, you have to define tokens names for FINAL states. The format is:
 ```
 {FINAL_STATE_F = 'TOKEN_NAME'}
 ```
@@ -30,6 +30,15 @@ Where:
 - `TOKEN_NAME` is the name of the token that will be generated when the automaton reaches that state.
 
 Lines that start with `#` are considered comments and are ignored.
+
+Additionally, you can define keywords and their corresponding tokens. The format is:
+```
+? lexeme -> TOKEN_NAME
+```
+Where:  
+- `lexeme` is the keyword (case-sensitive) that will be matched.
+- `TOKEN_NAME` is the name of the token that will be generated when the automaton matches the keyword.
+- `?` is the keyword that indicates that the line is a keyword definition.
 
 ### Example
 The following is an example of a rules file:

@@ -40,7 +40,7 @@
 (START, {digits}) -> INT_F
 (INT_F, {digits}) -> INT_F
 
-(START, {whitespaces}) -> START
+(START, {white_symbols}) -> START
 (START, {'"'}) -> STRING_START
 (STRING_START, {letters, digits, ' '}) -> STRING_START
 (STRING_START, {'"'}) -> STRING_F
@@ -48,25 +48,38 @@
 # Tokens for FINAL STATES
 # Tokens are defined as {FINAL_STATE = 'TOKEN_NAME'}
 
-{LBRACE_F = 'LBRACE'}
-{RBRACE_F = 'RBRACE'}
-{LPAREN_F = 'LPAREN'}
-{RPAREN_F = 'RPAREN'}
-{COLON_F = 'COLON'}
-{COMMA_F = 'COMMA'}
+{LBRACE_F = LBRACE}
+{RBRACE_F = RBRACE}
+{LPAREN_F = LPAREN}
+{RPAREN_F = RPAREN}
+{COLON_F = COLON}
+{COMMA_F = COMMA}
 
-{PLUS_F = 'PLUS'}
-{MINUS_F = 'MINUS'}
-{MULT_F = 'MULT'}
-{DIV_F = 'DIV'}
+{PLUS_F = PLUS}
+{MINUS_F = MINUS}
+{MULT_F = MULT}
+{DIV_F = DIV}
 
-{ASSIGN_F = 'ASSIGN'}
-{EQ_F = 'EQ'}
-{LESS_F = 'LESS'}
-{LEQ_F = 'LEQ'}
-{GREATER_F = 'GREATER'}
-{GEQ_F = 'GEQ'}
+{ASSIGN_F = ASSIGN}
+{EQ_F = EQ}
+{LESS_F = LESS}
+{LEQ_F = LEQ}
+{GREATER_F = GREATER}
+{GEQ_F = GEQ}
 
-{ID_F = 'ID'}
-{INT_F = 'INT'}
-{STRING_F = 'STRING'}
+{ID_F = ID}
+{INT_F = INT}
+{STRING_F = STRING}
+
+# Keywords, line starts with ?
+# lexeme -> TOKEN_NAME
+
+? if -> IF
+? else -> ELSE
+? while -> WHILE
+? for -> FOR
+? return -> RETURN
+? break -> BREAK
+? continue -> CONTINUE
+? int -> INT_TYPE
+? string -> STRING_TYPE
