@@ -1,0 +1,138 @@
+# START - is starting state
+# ANYTHING is a state
+# ANYTHING_F is a final state
+
+# Rule format: (STATE_PREV, {single char set}) -> STATE_NEW
+# Predefined char sets:
+# letters (a-z, A-Z)
+# letters_lower (a-z)
+# letters_upper (A-Z)
+# digits (0-9)
+# whitespaces
+# white_symbols
+# newline
+# printable
+
+# Rules
+
+(START, {white_symbols}) -> START
+
+(START, {'{'}) -> LBRACE_F
+{LBRACE_F = TOKEN_LEFT_BRACE}
+(START, {'}'}) -> RBRACE_F
+{RBRACE_F = TOKEN_RIGHT_BRACE}
+(START, {'('}) -> LPAREN_F
+{LPAREN_F = TOKEN_LEFT_BRACKET}
+(START, {')'}) -> RPAREN_F
+{RPAREN_F = TOKEN_RIGHT_BRACKET}
+(START, {':'}) -> COLON_F
+{COLON_F = TOKEN_COLON}
+(START, {','}) -> COMMA_F
+{COMMA_F = TOKEN_COMMA}
+
+(START, {'+'}) -> PLUS_F
+{PLUS_F = TOKEN_ADDITION}
+(START, {'*'}) -> MULT_F
+{MULT_F = TOKEN_MULTIPLICATION}
+
+(START, {'/'}) -> DIV_F
+{DIV_F = TOKEN_DIVISION}
+(DIV_F, {'/'}) -> COMMENT
+(COMMENT, {newline}) -> START
+(COMMENT, {printable}) -> COMMENT
+
+(START, {'='}) -> ASSIGN_F
+{ASSIGN_F = TOKEN_ASSIGNMENT}
+(ASSIGN_F, {'='}) -> EQ_F
+{EQ_F = TOKEN_EQUAL_TO}
+
+(START, {'-'}) -> MINUS_F
+{MINUS_F = TOKEN_SUBTRACTION}
+(MINUS_F, {'>'}) -> ARROW_F
+{ARROW_F = TOKEN_ARROW}
+
+(START, {'<'}) -> LESS_F
+{LESS_F = TOKEN_LESS_THAN}
+(LESS_F, {'='}) -> LEQ_F
+{LEQ_F = TOKEN_LESS_THAN_OR_EQUAL_TO}
+
+(START, {'>'}) -> GREATER_F
+{GREATER_F = TOKEN_GREATER_THAN}
+(GREATER_F, {'='}) -> GEQ_F
+{GEQ_F = TOKEN_GREATER_THAN_OR_EQUAL_TO}
+
+(START, {'?'}) -> IS_NIL_1
+(IS_NIL_1, {'?'}) -> IS_NIL_F
+{IS_NIL_F = TOKEN_IS_NIL}
+
+(START, {'!'}) -> NOT_F
+{NOT_F = TOKEN_LOGICAL_NOT}
+(NOT_F, {'='}) -> NEQ_F
+{NEQ_F = TOKEN_NOT_EQUAL_TO}
+
+(START, {'|'}) -> OR_1
+(OR_1, {'|'}) -> OR_F
+{OR_F = TOKEN_LOGICAL_OR}
+
+(START, {'&'}) -> AND_1
+(AND_1, {'&'}) -> AND_F
+{AND_F = TOKEN_LOGICAL_AND}
+
+(START, {'.'}) -> RANGE_START_1
+(RANGE_START_1, {'.'}) -> RANGE_START_2
+(RANGE_START_2, {'.'}) -> RANGE_CLOSED_F
+{RANGE_CLOSED_F = TOKEN_CLOSED_RANGE}
+(RANGE_START_2, {'<'}) -> RANGE_OPEN_F
+{RANGE_OPEN_F = TOKEN_HALF_OPEN_RANGE}
+
+(START, {letters, '_'}) -> ID_F
+(ID_F, {letters, digits, '_'}) -> ID_F
+{ID_F = TOKEN_IDENTIFIER}
+(ID_F, {'?'}) -> TYPE_NILLABLE_F
+{TYPE_NILLABLE_F = TOKEN_IDENTIFIER}
+
+(START, {digits}) -> INT_F
+(INT_F, {digits}) -> INT_F
+{INT_F = TOKEN_INTEGER}
+
+(INT_F, {'.'}) -> FLOAT_START
+(FLOAT_START, {digits}) -> FLOAT_F
+(FLOAT_F, {digits}) -> FLOAT_F
+{FLOAT_F = TOKEN_FLOAT}
+
+(START, {'"'}) -> STRING_START
+(STRING_START, {printable, '^"', '^\\'}) -> STRING_START
+(STRING_START, {'"'}) -> STRING_F
+(STRING_START, {'\\'}) -> ESCAPE
+(ESCAPE, {'n', 't', 'r'}) -> STRING_START
+{STRING_F = TOKEN_STRING}
+
+
+# Tokens for FINAL STATES
+# Tokens are defined as {FINAL_STATE = TOKEN_NAME}
+
+# Keywords, line starts with ?
+# lexeme -> TOKEN_NAME
+
+? if -> TOKEN_IF
+? else -> TOKEN_ELSE
+? while -> TOKEN_WHILE
+? for -> TOKEN_FOR
+? return -> TOKEN_RETURN
+? break -> TOKEN_BREAK
+? continue -> TOKEN_CONTINUE
+? Int -> TOKEN_INT_TYPE
+? Int? -> TOKEN_INT_NILLABLE_TYPE
+? String -> TOKEN_STRING_TYPE
+? String? -> TOKEN_STRING_NILLABLE_TYPE
+? Double -> TOKEN_FLOAT_TYPE
+? Double? -> TOKEN_FLOAT_NILLABLE_TYPE
+? Bool -> TOKEN_BOOL_TYPE
+? Bool? -> TOKEN_BOOL_NILLABLE_TYPE
+? var -> TOKEN_VAR
+? func -> TOKEN_FUNC
+? let -> TOKEN_LET
+? _ -> TOKEN_UNDERSCORE
+? true -> TOKEN_TRUE_LITERAL
+? false -> TOKEN_FALSE_LITERAL
+? nil -> TOKEN_NIL_LITERAL

@@ -48,9 +48,25 @@ The following is an example of a rules file:
 (STATE1, {'a', 'b'}) -> STATE1
 (STATE1, {'c'}) -> STATE2_F
 # Tokens
-{STATE2_F = 'TEST_TOKEN'}
+{STATE2_F = TEST_TOKEN}
 ```
 Equivalent regular expression: `(ab)+[c]` for token `TEST_TOKEN`.
+
+### Example excluding
+
+The following is an example of a rules file:
+```
+# Automaton rules
+(START, {letters, '^A'}) -> STATE1
+```
+Transition would be made for any letter (predefined set) from transition set except 'A'.
+
+```
+# Automaton rules
+(START, {'^A'}) -> STATE1
+```
+Transition would be made for any symbol (0-127) except 'A'.
+
 
 ### Predefined char sets for transition symbols, can be configured inside python script, other sets can be added
 - letters (a-z, A-Z)
@@ -62,9 +78,15 @@ Equivalent regular expression: `(ab)+[c]` for token `TEST_TOKEN`.
 - newline
 
 ## Usage
+
+### Configuration
+Edit `config.py` to configure the predefined char sets for transition symbols and
+other parameters.
+
+### Running
 To generate the C code, run the following command:
 ```
-python3 main.py <rules_file> > output.c
+python3 main.py <rules_file>
 ```
 In output.c, you will find the generated code. The generated code contains enums, additional functions templates, 
 and the main FSM function. You can modify the code to suit your needs.
